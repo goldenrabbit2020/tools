@@ -1,0 +1,90 @@
+# 제작 : 골든래빗(주)
+# 저작권 : MIT
+# 기능 : docx에서 이미지 추축
+# 동작 : docx 파일을 zip으로 변경 후 -> 압축 해제 -> 서브 폴더 이미지를 이동 -> 불필요한 파일 삭제
+# 사용 : 코드 파일과 docx 파일을 같은 폴더에 두고 터미널에서 "python.exe exportImage" 명령 실행
+# 주의 : 예외 처리 하나도 안 되어 있으니, 매번 기존 폴더를 지우고 타깃 docx 두고 실행할 것
+ 
+import sys
+import os
+import glob
+import zipfile
+import shutil
+
+# 환경 변수
+fromDir = '\word\media'
+wantFormat = '.zip'
+remove_file = ['\word', '\_rels', '\[Content_Types].xml']
+
+
+# 폴더 내의 모든 하위 파일들을 새로운 경로로 복사하는 함수
+def copy_all_file(file_list, new_path):
+    print(file_list)
+    for src_path in file_list:
+        print(src_path)
+
+# docx -> zip -> dir 변환
+def change_type():
+    docx_files = glob.glob('*.docx')
+    print(len(docx_files), 'files')
+
+    if len(docx_files) > 0:
+
+        for docx_file in docx_files:
+            docx_file_name, docx_file_extension = os.path.splitext(docx_file)
+            
+            # zip 파일로 변환
+            print('STEP : covert docx to zip')
+            dest = docx_file_name + wantFormat
+            print(docx_file, '->', dest)
+            os.rename(docx_file, dest)
+            
+            # zip 압축 해제
+            print('STEP : unzip')
+            fantasy_zip = zipfile.ZipFile(dest)
+            fantasy_zip.extractall(docx_file_name)
+            fantasy_zip.close()
+            
+            # zip 파일 삭제            
+            print('STEP : remove zip files')
+            os.remove(dest)
+    else:
+        print("None docx file")
+            
+
+# 파일 위치 변경
+def move_image(rootdir):
+
+    for file in os.listdir(rootdir):
+         d = os.path.join(rootdir, file)
+         if os.path.isdir(d):
+             # 이미지 위치 변경
+             
+             print('STEP : move image files')             
+             src_path = d + fromDir       # 기존 폴더 경로
+             
+             image_files = glob.glob(src_path+'\*.*')   
+             print(len(image_files), 'files')
+             
+             if len(image_files) > 0:
+                 for src_file in image_files:
+                     image_file_name, image_file_extension = os.path.splitext(src_file)
+                     print('SOURCE : ', src_file)
+                     new_path = src_file.replace('\word\media', '')
+                     print('TARGET : ', new_path)
+                     shutil.copyfile(src_file, new_path)
+            
+        
+             # 불필요한 파익 삭제
+             for dest in remove_file:
+                 print('STEP : cleanup')
+                 if os.path.isdir(d + dest):
+                     shutil.rmtree(d + dest)
+                 else:
+                     os.remove(d + dest)
+
+
+# main()
+print('실행 위치 : ' + os.getcwd())
+change_type()
+move_image(os.getcwd())
